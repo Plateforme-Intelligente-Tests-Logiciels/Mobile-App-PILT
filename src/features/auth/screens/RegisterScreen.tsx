@@ -1,0 +1,429 @@
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { SocialButton } from "@/components/ui/SocialButton";
+import { TextInputField } from "@/components/ui/TextInputField";
+import { COLORS, SIZES } from "@/constants";
+import { USER_ROLES } from "@/constants/roles";
+import { UserRole } from "@/types/auth";
+import { Ionicons } from "@expo/vector-icons";
+import { Link, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "../hooks";
+
+export const RegisterScreen = () => {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { register, isLoading, error, clearError } = useAuth();
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+
+  const validateForm = useCallback(() => {
+    const errors: Record<string, string> = {};
+
+    if (!fullName.trim()) {
+      errors.fullName = "Le nom complet est requis";
+    }
+
+    if (!email) {
+      errors.email = "Email est requis";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Email invalide";
+    }
+
+    if (!phoneNumber.trim()) {
+      errors.phoneNumber = "Le numéro de téléphone est requis";
+    }
+
+    if (!selectedRole) {
+      errors.role = "Sélectionnez un rôle";
+    }
+
+    if (!password) {
+      errors.password = "Le mot de passe est requis";
+    } else if (password.length < 8) {
+      errors.password = "Le mot de passe doit avoir au moins 8 caractères";
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = "Confirmez le mot de passe";
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = "Les mots de passe ne correspondent pas";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [fullName, email, phoneNumber, selectedRole, password, confirmPassword]);
+
+  const handleRegister = useCallback(async () => {
+    if (!validateForm()) return;
+
+    try {
+      clearError();
+      await register(fullName, email, phoneNumber, selectedRole, password);
+      router.replace("/(tabs)");
+    } catch (err) {
+      console.error("Register error:", err);
+    }
+  }, [
+    fullName,
+    email,
+    phoneNumber,
+    selectedRole,
+    password,
+    validateForm,
+    register,
+    clearError,
+    router,
+  ]);
+
+  const handleGoogleSignup = useCallback(() => {
+    console.log("Google signup");
+  }, []);
+
+  const handleGitHubSignup = useCallback(() => {
+    console.log("GitHub signup");
+  }, []);
+
+  return (
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Ionicons
+            name="checkmark-done-circle-outline"
+            size={SIZES.iconXl}
+            color={COLORS.primary}
+          />
+          <Text style={styles.title}>Create your account</Text>
+          <Text style={styles.subtitle}>
+            Start managing your Agile projects today.
+          </Text>
+        </View>
+
+        {/* Error Message */}
+        {error && (
+          <Card style={styles.errorCard}>
+            <View style={styles.errorContent}>
+              <Ionicons
+                name="alert-circle"
+                size={SIZES.iconMd}
+                color={COLORS.error}
+              />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          </Card>
+        )}
+
+        {/* Form */}
+        <View style={styles.form}>
+          <TextInputField
+            label="Full Name"
+            placeholder="Jane Doe"
+            value={fullName}
+            onChangeText={setFullName}
+            error={validationErrors.fullName}
+            icon="person-outline"
+          />
+
+          <TextInputField
+            label="Work Email"
+            placeholder="jane@company.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            error={validationErrors.email}
+            icon="mail-outline"
+          />
+
+          <TextInputField
+            label="Phone Number"
+            placeholder="+1234567890"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+            error={validationErrors.phoneNumber}
+            icon="call-outline"
+          />
+
+          {/* Role Selection */}
+          <View style={styles.roleSection}>
+            <Text style={styles.roleLabel}>Your Role</Text>
+            <View style={styles.roleGrid}>
+              {USER_ROLES.map((role) => (
+                <TouchableOpacity
+                  key={role.label}
+                  style={[
+                    styles.roleButton,
+                    selectedRole === role.label && styles.roleButtonSelected,
+                  ]}
+                  onPress={() => setSelectedRole(role.label as UserRole)}
+                >
+                  <Ionicons
+                    name={role.icon as any}
+                    size={SIZES.iconLg}
+                    color={
+                      selectedRole === role.label
+                        ? COLORS.primary
+                        : COLORS.textSecondary
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.roleButtonText,
+                      selectedRole === role.label &&
+                        styles.roleButtonTextSelected,
+                    ]}
+                  >
+                    {role.label === "Développeur" && "Dev"}
+                    {role.label === "Testeur QA" && "QA"}
+                    {role.label === "Product Owner" && "PO"}
+                    {role.label === "Scrum Master" && "Scrum"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {validationErrors.role && (
+              <Text style={styles.errorText}>{validationErrors.role}</Text>
+            )}
+          </View>
+
+          <TextInputField
+            label="Password"
+            placeholder="Min. 8 characters"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            error={validationErrors.password}
+            icon="lock-closed-outline"
+          />
+
+          <TextInputField
+            label="Confirm Password"
+            placeholder="Confirm your password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            error={validationErrors.confirmPassword}
+            icon="lock-closed-outline"
+          />
+
+          {/* Register Button */}
+          <Button
+            label="Create My Account"
+            onPress={handleRegister}
+            loading={isLoading}
+            disabled={
+              isLoading ||
+              !fullName ||
+              !email ||
+              !phoneNumber ||
+              !selectedRole ||
+              !password
+            }
+            size="lg"
+            style={styles.registerButton}
+          />
+
+          <Text style={styles.termsText}>
+            By clicking "Create My Account", you agree to our{" "}
+            <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
+            <Text style={styles.termsLink}>Privacy Policy</Text>.
+          </Text>
+        </View>
+
+        {/* Divider */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
+          <View style={styles.divider} />
+        </View>
+
+        {/* Social Buttons */}
+        <View style={styles.socialContainer}>
+          <SocialButton provider="google" onPress={handleGoogleSignup} />
+          <SocialButton provider="github" onPress={handleGitHubSignup} />
+        </View>
+
+        {/* Sign In Link */}
+        <View style={styles.signinContainer}>
+          <Text style={styles.signinText}>Already have an account?</Text>
+          <Link href="/(auth)/login" asChild>
+            <TouchableOpacity>
+              <Text style={styles.signinLink}> Sign in</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: SIZES.lg,
+    paddingVertical: SIZES.lg,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: SIZES.xl,
+  },
+  title: {
+    fontSize: SIZES.font2xl,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginTop: SIZES.lg,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: SIZES.fontBase,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    marginTop: SIZES.sm,
+  },
+  errorCard: {
+    marginBottom: SIZES.lg,
+    backgroundColor: COLORS.background,
+    borderColor: COLORS.error,
+  },
+  errorContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: SIZES.fontSm,
+    marginLeft: SIZES.md,
+    flex: 1,
+    fontWeight: "500",
+  },
+  form: {
+    marginBottom: SIZES.xl,
+  },
+  roleSection: {
+    marginBottom: SIZES.lg,
+  },
+  roleLabel: {
+    color: COLORS.text,
+    fontSize: SIZES.fontSm,
+    fontWeight: "600",
+    marginBottom: SIZES.md,
+    letterSpacing: 0.3,
+  },
+  roleGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SIZES.sm,
+    marginBottom: SIZES.md,
+  },
+  roleButton: {
+    flex: 1,
+    minWidth: "23%",
+    aspectRatio: 1,
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: SIZES.radiusLg,
+    borderWidth: 1,
+    borderColor: COLORS.inputBorder,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: SIZES.sm,
+  },
+  roleButtonSelected: {
+    backgroundColor: COLORS.backgroundSecondary,
+    borderColor: COLORS.primary,
+  },
+  roleButtonText: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.fontXs,
+    fontWeight: "500",
+    marginTop: SIZES.xs,
+    textAlign: "center",
+  },
+  roleButtonTextSelected: {
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  registerButton: {
+    marginTop: SIZES.md,
+  },
+  termsText: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.fontXs,
+    textAlign: "center",
+    marginTop: SIZES.md,
+    lineHeight: SIZES.fontSm * SIZES.lineHeightNormal,
+  },
+  termsLink: {
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: SIZES.xl,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.inputBorder,
+  },
+  dividerText: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.fontXs,
+    marginHorizontal: SIZES.md,
+    fontWeight: "500",
+    letterSpacing: 0.5,
+  },
+  socialContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: SIZES.md,
+    marginBottom: SIZES.xl,
+  },
+  signinContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  signinText: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.fontBase,
+    fontWeight: "400",
+  },
+  signinLink: {
+    color: COLORS.primary,
+    fontSize: SIZES.fontBase,
+    fontWeight: "600",
+  },
+});
