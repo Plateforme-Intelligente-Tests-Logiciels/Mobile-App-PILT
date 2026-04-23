@@ -20,6 +20,15 @@ interface PILTTokenRole {
   niveau_acces: number;
 }
 
+interface PILTMeResponse {
+  id: number;
+  email: string;
+  nom: string;
+  telephone?: string;
+  role?: PILTTokenRole;
+  created_at?: string;
+}
+
 class AuthApi {
   private axiosInstance: AxiosInstance;
 
@@ -65,8 +74,19 @@ class AuthApi {
    */
   private getRoleFromCode(
     code?: string,
-  ): "Développeur" | "Testeur QA" | "Product Owner" | "Scrum Master" {
-    switch (code?.toUpperCase()) {
+  ):
+    | "Super Admin"
+    | "Développeur"
+    | "Testeur QA"
+    | "Product Owner"
+    | "Scrum Master" {
+    const normalizedCode = code?.toUpperCase();
+
+    switch (normalizedCode) {
+      case "SUPER_ADMIN":
+      case "SUPERADMIN":
+      case "SUPER_ADMINISTRATEUR":
+        return "Super Admin";
       case "DEVELOPPEUR":
         return "Développeur";
       case "TESTEUR_QA":
@@ -85,6 +105,8 @@ class AuthApi {
    */
   private getRoleId(role: string): number {
     switch (role) {
+      case "Super Admin":
+        return 1;
       case "Développeur":
         return 2;
       case "Testeur QA":
@@ -117,6 +139,25 @@ class AuthApi {
 
       const authResponse = this.transformPILTResponse(response.data);
       this.setAuthToken(authResponse.token);
+
+      // If role is not present in token payload, fetch /auth/me to resolve exact role.
+      if (!response.data.role?.code) {
+        try {
+          const me = await this.axiosInstance.get<PILTMeResponse>("/auth/me");
+          authResponse.user = {
+            ...authResponse.user,
+            id: me.data.id.toString(),
+            email: me.data.email,
+            fullName: me.data.nom,
+            phoneNumber: me.data.telephone ?? "",
+            role: this.getRoleFromCode(me.data.role?.code),
+            createdAt: me.data.created_at ?? authResponse.user.createdAt,
+          };
+        } catch {
+          // Keep auth response from login when /auth/me is unavailable.
+        }
+      }
+
       return authResponse;
     } catch (error) {
       throw this.handleError(error);
@@ -217,6 +258,21 @@ class AuthApi {
       );
     } catch (error) {
       throw this.handleError(error);
+    }
+  }
+
+  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    try {
+      const response = await this.axiosInstance.post<PILTAuthResponse>(
+        "/auth/refresh",
+        { refresh_token: refreshToken },
+      );
+
+      const authResponse = this.transformPILTResponse(response.data);
+      this.setAuthToken(authResponse.token);
+      return authResponse;
+    } catch {
+      throw new Error("Session expirée, veuillez vous reconnecter.");
     }
   }
 

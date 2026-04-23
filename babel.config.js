@@ -12,7 +12,7 @@ module.exports = function (api) {
           alias: {
             "@/features": "./src/features",
             "@/components": "./src/components",
-            "@/hooks": "./hooks",
+            "@/hooks": "./src/hooks",
             "@/constants": "./src/constants",
             "@/types": "./src/types",
             "@/lib": "./src/lib",

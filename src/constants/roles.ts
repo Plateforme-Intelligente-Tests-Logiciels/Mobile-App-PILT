@@ -6,6 +6,11 @@ export const USER_ROLES: {
   description: string;
 }[] = [
   {
+    label: "Super Admin",
+    icon: "shield-checkmark",
+    description: "Administration complète de la plateforme",
+  },
+  {
     label: "Développeur",
     icon: "code",
     description: "Développement et implémentation",

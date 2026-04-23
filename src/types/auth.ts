@@ -1,4 +1,5 @@
 export type UserRole =
+  | "Super Admin"
   | "Développeur"
   | "Testeur QA"
   | "Product Owner"
