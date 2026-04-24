@@ -286,7 +286,17 @@ class AuthApi {
 
   private handleError(error: any): Error {
     if (axios.isAxiosError(error)) {
-      const message = error.response?.data?.message || error.message;
+      if (error.message === "Network Error") {
+        return new Error(
+          `Network Error: backend injoom maywasalsh. Thabet EXPO_PUBLIC_API_URL (${API_BASE_URL}) w anna serveur ykoun shayyekh.`
+        );
+      }
+
+      const detail = error.response?.data?.detail;
+      const message =
+        (typeof detail === "string" ? detail : undefined) ||
+        error.response?.data?.message ||
+        error.message;
       return new Error(message);
     }
     return error instanceof Error

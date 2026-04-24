@@ -4,11 +4,35 @@ import {
 } from "@/types/api";
 import { apiClient, handleApiError } from "./api";
 
+type UtilisateurApiResponse = {
+  id: number;
+  email: string;
+  nom: string;
+  telephone?: string | null;
+  actif?: boolean;
+  is_active?: boolean;
+  role?: RoleResponse;
+  dateCreation?: string | null;
+  created_at?: string | null;
+};
+
+function normalizeUser(item: UtilisateurApiResponse): UtilisateurResponse {
+  return {
+    id: item.id,
+    email: item.email,
+    nom: item.nom,
+    telephone: item.telephone ?? undefined,
+    is_active: typeof item.is_active === "boolean" ? item.is_active : !!item.actif,
+    role: item.role,
+    created_at: item.created_at ?? item.dateCreation ?? new Date().toISOString(),
+  };
+}
+
 export const usersService = {
   async getAll(): Promise<UtilisateurResponse[]> {
     try {
-      const res = await apiClient.get<UtilisateurResponse[]>("/users");
-      return res.data;
+      const res = await apiClient.get<UtilisateurApiResponse[]>("/users");
+      return res.data.map(normalizeUser);
     } catch (e) {
       handleApiError(e);
     }
@@ -16,8 +40,8 @@ export const usersService = {
 
   async getPending(): Promise<UtilisateurResponse[]> {
     try {
-      const res = await apiClient.get<UtilisateurResponse[]>("/users/pending");
-      return res.data;
+      const res = await apiClient.get<UtilisateurApiResponse[]>("/users/pending");
+      return res.data.map(normalizeUser);
     } catch (e) {
       handleApiError(e);
     }
@@ -25,10 +49,10 @@ export const usersService = {
 
   async activate(userId: number): Promise<UtilisateurResponse> {
     try {
-      const res = await apiClient.patch<UtilisateurResponse>(
+      const res = await apiClient.patch<UtilisateurApiResponse>(
         `/users/${userId}/activate`
       );
-      return res.data;
+      return normalizeUser(res.data);
     } catch (e) {
       handleApiError(e);
     }
@@ -36,10 +60,10 @@ export const usersService = {
 
   async deactivate(userId: number): Promise<UtilisateurResponse> {
     try {
-      const res = await apiClient.patch<UtilisateurResponse>(
+      const res = await apiClient.patch<UtilisateurApiResponse>(
         `/users/${userId}/deactivate`
       );
-      return res.data;
+      return normalizeUser(res.data);
     } catch (e) {
       handleApiError(e);
     }
@@ -55,8 +79,8 @@ export const usersService = {
 
   async getMe(): Promise<UtilisateurResponse> {
     try {
-      const res = await apiClient.get<UtilisateurResponse>("/auth/me");
-      return res.data;
+      const res = await apiClient.get<UtilisateurApiResponse>("/auth/me");
+      return normalizeUser(res.data);
     } catch (e) {
       handleApiError(e);
     }
@@ -67,11 +91,11 @@ export const usersService = {
     telephone?: string;
   }): Promise<UtilisateurResponse> {
     try {
-      const res = await apiClient.patch<UtilisateurResponse>(
+      const res = await apiClient.patch<UtilisateurApiResponse>(
         "/users/me/profile",
         data
       );
-      return res.data;
+      return normalizeUser(res.data);
     } catch (e) {
       handleApiError(e);
     }

@@ -46,6 +46,8 @@ export interface ProjetStats {
   total_epics: number;
   total_user_stories: number;
   sante_produit?: number;
+  nb_modules?: number;
+  nb_sprints?: number;
 }
 
 // ===== Modules =====

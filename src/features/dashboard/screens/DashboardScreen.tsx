@@ -14,8 +14,10 @@ import { COLORS, SIZES } from "@/constants";
 import { useAuthStore } from "@/features/auth/store";
 import { logsService } from "@/services/logs";
 import { projectsService } from "@/services/projects";
+import { reportsService } from "@/services/reports";
 import { sprintsService } from "@/services/sprints";
 import { storiesService } from "@/services/stories";
+import { cahierTestsService } from "@/services/tests";
 import { rolesService, usersService } from "@/services/users";
 import type {
   DashboardActivity,
@@ -301,6 +303,8 @@ function SuperAdminDashboard() {
 function ProductOwnerDashboard() {
   const insets = useSafeAreaInsets();
   const [projects, setProjects] = useState<ProjetResponse[]>([]);
+  const [projectStats, setProjectStats] = useState<Record<number, { nb_modules: number; nb_sprints: number }>>({});
+  const [storiesCount, setStoriesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -308,6 +312,36 @@ function ProductOwnerDashboard() {
     try {
       const data = await projectsService.getMine();
       setProjects(data ?? []);
+
+      const statsEntries = await Promise.allSettled(
+        (data ?? []).map(async (project) => {
+          const [stats, backlog] = await Promise.all([
+            projectsService.getStats(project.id),
+            storiesService.getBacklog(project.id),
+          ]);
+          return {
+            projectId: project.id,
+            nb_modules: stats.nb_modules ?? 0,
+            nb_sprints: stats.nb_sprints ?? 0,
+            stories: asArray<UserStoryResponse>(backlog).length,
+          };
+        }),
+      );
+
+      const nextStats: Record<number, { nb_modules: number; nb_sprints: number }> = {};
+      let totalStories = 0;
+      for (const result of statsEntries) {
+        if (result.status === "fulfilled") {
+          nextStats[result.value.projectId] = {
+            nb_modules: result.value.nb_modules,
+            nb_sprints: result.value.nb_sprints,
+          };
+          totalStories += result.value.stories;
+        }
+      }
+
+      setProjectStats(nextStats);
+      setStoriesCount(totalStories);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -333,7 +367,7 @@ function ProductOwnerDashboard() {
     },
     {
       label: "User Stories",
-      value: String(projects.reduce((s, p) => s + (p.nb_user_stories ?? 0), 0)),
+      value: String(storiesCount),
       icon: "document-text",
       tone: "#a855f7",
     },
@@ -384,7 +418,7 @@ function ProductOwnerDashboard() {
               <View style={styles.projectInfo}>
                 <Text style={styles.projectName}>{p.nom}</Text>
                 <Text style={styles.projectDetail}>
-                  {p.nb_user_stories ?? 0} stories · {p.nb_epics ?? 0} epics
+                  {projectStats[p.id]?.nb_modules ?? 0} modules · {projectStats[p.id]?.nb_sprints ?? 0} sprints
                 </Text>
               </View>
               <StatusBadge
@@ -530,6 +564,10 @@ function ScrumMasterDashboard() {
 function QATesterDashboard() {
   const insets = useSafeAreaInsets();
   const [projects, setProjects] = useState<ProjetResponse[]>([]);
+  const [qaStats, setQaStats] = useState({
+    cahiers: 0,
+    rapports: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -537,6 +575,34 @@ function QATesterDashboard() {
     try {
       const data = await projectsService.getMember();
       setProjects(data ?? []);
+
+      const details = await Promise.allSettled(
+        (data ?? []).map(async (project) => {
+          const [cahier, reports] = await Promise.all([
+            cahierTestsService.get(project.id),
+            reportsService.getAll(project.id),
+          ]);
+
+          return {
+            cahier: !!cahier,
+            reports: asArray(reports).length,
+          };
+        }),
+      );
+
+      let cahiersCount = 0;
+      let reportsCount = 0;
+      for (const result of details) {
+        if (result.status === "fulfilled") {
+          if (result.value.cahier) cahiersCount += 1;
+          reportsCount += result.value.reports;
+        }
+      }
+
+      setQaStats({
+        cahiers: cahiersCount,
+        rapports: reportsCount,
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -556,11 +622,16 @@ function QATesterDashboard() {
     },
     {
       label: "Cahiers de tests",
-      value: String(projects.length),
+      value: String(qaStats.cahiers),
       icon: "clipboard",
       tone: "#06b6d4",
     },
-    { label: "Rapports QA", value: "—", icon: "bar-chart", tone: "#ec4899" },
+    {
+      label: "Rapports QA",
+      value: String(qaStats.rapports),
+      icon: "bar-chart",
+      tone: "#ec4899",
+    },
   ];
 
   return (
