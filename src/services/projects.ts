@@ -7,13 +7,76 @@ import {
 } from "@/types/api";
 import { apiClient, handleApiError } from "./api";
 
+type ProjetApiResponse = {
+  id: number;
+  nom: string;
+  description?: string | null;
+  statut?: string | null;
+  dateDebut?: string | null;
+  dateFin?: string | null;
+  membres?: UtilisateurResponse[];
+};
+
+type ModuleApiResponse = {
+  id: number;
+  nom: string;
+  description?: string | null;
+  ordre?: number;
+  projet_id: number;
+};
+
+type EpicApiResponse = {
+  id: number;
+  titre: string;
+  description?: string | null;
+  priorite?: number;
+  statut?: string | null;
+  module_id: number;
+};
+
+function normalizeProjectStatus(status?: string | null): ProjetResponse["statut"] {
+  const value = (status ?? "").toUpperCase();
+  if (value === "ARCHIVE" || value === "ARCHIVED") return "ARCHIVE";
+  if (value === "TERMINE" || value === "DONE") return "TERMINE";
+  return "ACTIF";
+}
+
+function normalizeProjet(project: ProjetApiResponse): ProjetResponse {
+  return {
+    id: project.id,
+    nom: project.nom,
+    description: project.description ?? undefined,
+    statut: normalizeProjectStatus(project.statut),
+    date_debut: project.dateDebut ?? undefined,
+    date_fin: project.dateFin ?? undefined,
+    membres: project.membres,
+    nb_modules: 0,
+    nb_epics: 0,
+    nb_user_stories: 0,
+  };
+}
+
+function normalizeEpicPriority(priority?: number): EpicResponse["priorite"] {
+  if ((priority ?? 0) >= 75) return "CRITIQUE";
+  if ((priority ?? 0) >= 50) return "HAUTE";
+  if ((priority ?? 0) >= 25) return "MOYENNE";
+  return "BASSE";
+}
+
+function normalizeEpicStatus(status?: string | null): EpicResponse["statut"] {
+  const value = (status ?? "").toLowerCase();
+  if (value === "done") return "TERMINE";
+  if (value === "in_progress") return "EN_COURS";
+  return "A_FAIRE";
+}
+
 export const projectsService = {
   async getMine(): Promise<ProjetResponse[]> {
     try {
-      const res = await apiClient.get<ProjetResponse[]>(
+      const res = await apiClient.get<ProjetApiResponse[]>(
         "/projets/mes-projets"
       );
-      return res.data;
+      return res.data.map(normalizeProjet);
     } catch (e) {
       handleApiError(e);
     }
@@ -21,10 +84,10 @@ export const projectsService = {
 
   async getMember(): Promise<ProjetResponse[]> {
     try {
-      const res = await apiClient.get<ProjetResponse[]>(
+      const res = await apiClient.get<ProjetApiResponse[]>(
         "/projets/mes-projets-membre"
       );
-      return res.data;
+      return res.data.map(normalizeProjet);
     } catch (e) {
       handleApiError(e);
     }
@@ -32,8 +95,8 @@ export const projectsService = {
 
   async getById(projetId: number): Promise<ProjetResponse> {
     try {
-      const res = await apiClient.get<ProjetResponse>(`/projets/${projetId}`);
-      return res.data;
+      const res = await apiClient.get<ProjetApiResponse>(`/projets/${projetId}`);
+      return normalizeProjet(res.data);
     } catch (e) {
       handleApiError(e);
     }
@@ -68,8 +131,14 @@ export const projectsService = {
     date_fin?: string;
   }): Promise<ProjetResponse> {
     try {
-      const res = await apiClient.post<ProjetResponse>("/projets", data);
-      return res.data;
+      const payload = {
+        nom: data.nom,
+        description: data.description,
+        dateDebut: data.date_debut,
+        dateFin: data.date_fin,
+      };
+      const res = await apiClient.post<ProjetApiResponse>("/projets", payload);
+      return normalizeProjet(res.data);
     } catch (e) {
       handleApiError(e);
     }
@@ -80,11 +149,15 @@ export const projectsService = {
     data: Partial<{ nom: string; description: string; statut: string }>
   ): Promise<ProjetResponse> {
     try {
-      const res = await apiClient.put<ProjetResponse>(
+      const res = await apiClient.put<ProjetApiResponse>(
         `/projets/${projetId}`,
-        data
+        {
+          nom: data.nom,
+          description: data.description,
+          statut: data.statut?.toLowerCase(),
+        }
       );
-      return res.data;
+      return normalizeProjet(res.data);
     } catch (e) {
       handleApiError(e);
     }
@@ -92,10 +165,10 @@ export const projectsService = {
 
   async archive(projetId: number): Promise<ProjetResponse> {
     try {
-      const res = await apiClient.patch<ProjetResponse>(
+      const res = await apiClient.patch<ProjetApiResponse>(
         `/projets/${projetId}/archiver`
       );
-      return res.data;
+      return normalizeProjet(res.data);
     } catch (e) {
       handleApiError(e);
     }
@@ -120,10 +193,16 @@ export const projectsService = {
 export const modulesService = {
   async getAll(projetId: number): Promise<ModuleResponse[]> {
     try {
-      const res = await apiClient.get<ModuleResponse[]>(
+      const res = await apiClient.get<ModuleApiResponse[]>(
         `/projets/${projetId}/modules`
       );
-      return res.data;
+      return res.data.map((item) => ({
+        id: item.id,
+        nom: item.nom,
+        description: item.description ?? undefined,
+        ordre: item.ordre,
+        projet_id: item.projet_id,
+      }));
     } catch (e) {
       handleApiError(e);
     }
@@ -133,10 +212,18 @@ export const modulesService = {
 export const epicsService = {
   async getAll(projetId: number, moduleId: number): Promise<EpicResponse[]> {
     try {
-      const res = await apiClient.get<EpicResponse[]>(
+      const res = await apiClient.get<EpicApiResponse[]>(
         `/projets/${projetId}/modules/${moduleId}/epics`
       );
-      return res.data;
+      return res.data.map((item) => ({
+        id: item.id,
+        nom: item.titre,
+        description: item.description ?? undefined,
+        priorite: normalizeEpicPriority(item.priorite),
+        statut: normalizeEpicStatus(item.statut),
+        module_id: item.module_id,
+        projet_id: projetId,
+      }));
     } catch (e) {
       handleApiError(e);
     }

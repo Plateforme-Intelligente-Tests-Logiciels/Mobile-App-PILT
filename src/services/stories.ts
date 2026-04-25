@@ -1,13 +1,61 @@
 import { BacklogIndicateurs, UserStoryResponse } from "@/types/api";
 import { apiClient, handleApiError } from "./api";
 
+type UserStoryApiResponse = {
+  id: number;
+  titre: string;
+  description?: string | null;
+  priorite?: string | null;
+  statut?: string | null;
+  points?: number | null;
+  epic_id: number;
+  assignee?: { id: number; nom: string } | null;
+};
+
+function normalizeStoryStatus(status?: string | null): UserStoryResponse["statut"] {
+  const value = (status ?? "").toLowerCase();
+  if (value === "in_progress") return "EN_COURS";
+  if (value === "done") return "TERMINE";
+  return "A_FAIRE";
+}
+
+function denormalizeStoryStatus(status: UserStoryResponse["statut"]): string {
+  if (status === "EN_COURS") return "in_progress";
+  if (status === "TERMINE") return "done";
+  return "to_do";
+}
+
+function normalizeStoryPriority(priority?: string | null): UserStoryResponse["priorite"] {
+  const value = (priority ?? "").toLowerCase();
+  if (value === "must_have") return "CRITIQUE";
+  if (value === "should_have") return "HAUTE";
+  if (value === "could_have") return "MOYENNE";
+  return "BASSE";
+}
+
+function normalizeStory(item: UserStoryApiResponse, moduleId?: number): UserStoryResponse {
+  return {
+    id: item.id,
+    titre: item.titre,
+    description: item.description ?? undefined,
+    priorite: normalizeStoryPriority(item.priorite),
+    statut: normalizeStoryStatus(item.statut),
+    points: item.points ?? undefined,
+    module_id: moduleId,
+    epic_id: item.epic_id,
+    assignee: item.assignee
+      ? ({ id: item.assignee.id, nom: item.assignee.nom } as UserStoryResponse["assignee"])
+      : undefined,
+  };
+}
+
 export const storiesService = {
   async getBacklog(projetId: number): Promise<UserStoryResponse[]> {
     try {
-      const res = await apiClient.get<UserStoryResponse[]>(
+      const res = await apiClient.get<UserStoryApiResponse[]>(
         `/projets/${projetId}/backlog`,
       );
-      return res.data;
+      return res.data.map((item) => normalizeStory(item));
     } catch (e) {
       handleApiError(e);
     }
@@ -30,10 +78,10 @@ export const storiesService = {
     epicId: number,
   ): Promise<UserStoryResponse[]> {
     try {
-      const res = await apiClient.get<UserStoryResponse[]>(
+      const res = await apiClient.get<UserStoryApiResponse[]>(
         `/projets/${projetId}/modules/${moduleId}/epics/${epicId}/userstories`,
       );
-      return res.data;
+      return res.data.map((item) => normalizeStory(item, moduleId));
     } catch (e) {
       handleApiError(e);
     }
@@ -46,10 +94,10 @@ export const storiesService = {
     storyId: number,
   ): Promise<UserStoryResponse> {
     try {
-      const res = await apiClient.get<UserStoryResponse>(
+      const res = await apiClient.get<UserStoryApiResponse>(
         `/projets/${projetId}/modules/${moduleId}/epics/${epicId}/userstories/${storyId}`,
       );
-      return res.data;
+      return normalizeStory(res.data, moduleId);
     } catch (e) {
       handleApiError(e);
     }
@@ -71,9 +119,9 @@ export const storiesService = {
 
       const res = await apiClient.patch<UserStoryResponse>(
         `/projets/${projetId}/modules/${moduleId}/epics/${epicId}/userstories/${storyId}/statut`,
-        { statut },
+        { statut: denormalizeStoryStatus(statut) },
       );
-      return res.data;
+      return normalizeStory(res.data as unknown as UserStoryApiResponse, moduleId);
     } catch (e) {
       handleApiError(e);
     }
@@ -87,11 +135,11 @@ export const storiesService = {
     assigneeId: number,
   ): Promise<UserStoryResponse> {
     try {
-      const res = await apiClient.patch<UserStoryResponse>(
+      const res = await apiClient.patch<UserStoryApiResponse>(
         `/projets/${projetId}/modules/${moduleId}/epics/${epicId}/userstories/${storyId}/assigner`,
-        { assignee_id: assigneeId },
+        { developeur_id: assigneeId },
       );
-      return res.data;
+      return normalizeStory(res.data, moduleId);
     } catch (e) {
       handleApiError(e);
     }
