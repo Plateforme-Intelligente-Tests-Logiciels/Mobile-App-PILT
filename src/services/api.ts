@@ -11,7 +11,7 @@ let lastSeenToken: string | null = null;
 function createApiClient(): AxiosInstance {
   const instance = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 15000,
+    timeout: 30000,
     headers: { "Content-Type": "application/json" },
   });
 
@@ -75,6 +75,22 @@ export const apiClient = createApiClient();
 
 export function handleApiError(error: unknown): never {
   if (axios.isAxiosError(error)) {
+    const isTimeout =
+      error.code === "ECONNABORTED" ||
+      (typeof error.message === "string" && error.message.includes("timeout"));
+
+    if (isTimeout) {
+      throw new Error(
+        "Le serveur met trop de temps a repondre. Verifiez EXPO_PUBLIC_API_URL et votre connexion.",
+      );
+    }
+
+    if (!error.response) {
+      throw new Error(
+        "Impossible de joindre l'API. Verifiez EXPO_PUBLIC_API_URL et que le backend est demarre.",
+      );
+    }
+
     const detail = error.response?.data?.detail;
     const message =
       typeof detail === "string"

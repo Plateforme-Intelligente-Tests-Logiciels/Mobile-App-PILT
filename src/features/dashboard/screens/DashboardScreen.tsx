@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,10 +21,10 @@ import { storiesService } from "@/services/stories";
 import { cahierTestsService } from "@/services/tests";
 import { rolesService, usersService } from "@/services/users";
 import type {
-  DashboardActivity,
-  ProjetResponse,
-  SprintResponse,
-  UserStoryResponse,
+    DashboardActivity,
+    ProjetResponse,
+    SprintResponse,
+    UserStoryResponse,
 } from "@/types/api";
 import { UserRole } from "@/types/auth";
 
@@ -303,7 +304,9 @@ function SuperAdminDashboard() {
 function ProductOwnerDashboard() {
   const insets = useSafeAreaInsets();
   const [projects, setProjects] = useState<ProjetResponse[]>([]);
-  const [projectStats, setProjectStats] = useState<Record<number, { nb_modules: number; nb_sprints: number }>>({});
+  const [projectStats, setProjectStats] = useState<
+    Record<number, { nb_modules: number; nb_sprints: number }>
+  >({});
   const [storiesCount, setStoriesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -328,7 +331,10 @@ function ProductOwnerDashboard() {
         }),
       );
 
-      const nextStats: Record<number, { nb_modules: number; nb_sprints: number }> = {};
+      const nextStats: Record<
+        number,
+        { nb_modules: number; nb_sprints: number }
+      > = {};
       let totalStories = 0;
       for (const result of statsEntries) {
         if (result.status === "fulfilled") {
@@ -418,7 +424,8 @@ function ProductOwnerDashboard() {
               <View style={styles.projectInfo}>
                 <Text style={styles.projectName}>{p.nom}</Text>
                 <Text style={styles.projectDetail}>
-                  {projectStats[p.id]?.nb_modules ?? 0} modules · {projectStats[p.id]?.nb_sprints ?? 0} sprints
+                  {projectStats[p.id]?.nb_modules ?? 0} modules ·{" "}
+                  {projectStats[p.id]?.nb_sprints ?? 0} sprints
                 </Text>
               </View>
               <StatusBadge
@@ -454,6 +461,13 @@ function ScrumMasterDashboard() {
         const sprint = await sprintsService.getActive(projs[0].id);
         setActiveSprint(sprint);
       }
+    } catch (e: any) {
+      Alert.alert(
+        "Erreur",
+        e?.message ?? "Impossible de charger le tableau de bord",
+      );
+      setProjects([]);
+      setActiveSprint(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
