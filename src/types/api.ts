@@ -144,6 +144,17 @@ export interface CahierTestResponse {
   cas_tests?: CasTestResponse[];
 }
 
+export interface CasTestHistoryEntry {
+  id: number;
+  statut?: string;
+  resultat?: string;
+  commentaire?: string;
+  created_at?: string;
+  user_nom?: string;
+  user_email?: string;
+  details?: Record<string, unknown>;
+}
+
 export interface UnitTestResponse {
   id: number;
   nom: string;

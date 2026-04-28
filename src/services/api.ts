@@ -1,4 +1,4 @@
-import { useAuthStore } from "@/features/auth/store";
+import { useAuthStore } from "@/context/authStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance } from "axios";
 import { Alert } from "react-native";

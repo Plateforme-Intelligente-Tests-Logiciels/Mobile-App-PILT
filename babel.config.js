@@ -10,12 +10,16 @@ module.exports = function (api) {
         {
           cwd: "babelrc",
           alias: {
-            "@/features": "./src/features",
+            "@/screens": "./src/screens",
             "@/components": "./src/components",
             "@/hooks": "./src/hooks",
             "@/constants": "./src/constants",
             "@/types": "./src/types",
-            "@/lib": "./src/lib",
+            "@/services": "./src/services",
+            "@/context": "./src/context",
+            "@/config": "./src/config",
+            "@/utils": "./src/utils",
+            "@/navigation": "./src/navigation",
             "@": "./src",
           },
         },
@@ -24,3 +28,4 @@ module.exports = function (api) {
     ],
   };
 };
+
