@@ -5,6 +5,17 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  OAuthCallback: {
+    access_token?: string;
+    token_type?: string;
+    user_id?: string;
+    email?: string;
+    nom?: string;
+    role?: string;
+    need_role?: string;
+    oauth_error?: string;
+    pending_activation?: string;
+  };
   ResetPassword: {
     token?: string;
   };

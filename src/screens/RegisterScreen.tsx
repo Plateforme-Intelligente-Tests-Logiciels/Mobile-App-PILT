@@ -4,12 +4,17 @@ import { SocialButton } from "@/components/ui/SocialButton";
 import { TextInputField } from "@/components/ui/TextInputField";
 import { COLORS, SIZES } from "@/constants";
 import { USER_ROLES } from "@/constants/roles";
+import { useAuthStore } from "@/context/authStore";
 import { AuthStackParamList } from "@/navigation/types";
+import { authApi } from "@/services/auth";
 import { UserRole } from "@/types/auth";
 import { Ionicons } from "@expo/vector-icons";
+import * as AuthSession from "expo-auth-session";
+import * as Linking from "expo-linking";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useState } from "react";
+import * as WebBrowser from "expo-web-browser";
 import {
     ScrollView,
     StyleSheet,
@@ -25,6 +30,7 @@ export const RegisterScreen = () => {
     useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const insets = useSafeAreaInsets();
   const { register, isLoading, error, clearError } = useAuth();
+  const { setLoading, setError } = useAuthStore();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -96,12 +102,108 @@ export const RegisterScreen = () => {
   ]);
 
   const handleGoogleSignup = useCallback(() => {
-    console.log("Google signup");
-  }, []);
+    void (async () => {
+      setLoading(true);
+      clearError();
+      try {
+        const startUrl = authApi.getOAuthLoginUrl("google", "register");
+        const returnUrl = AuthSession.makeRedirectUri({
+          scheme: "mobileapp",
+          path: "auth/oauth/callback",
+        });
+
+        const callbackUrl = await new Promise<string>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            subscription.remove();
+            reject(new Error("OAuth timeout: callback non recu."));
+          }, 120000);
+
+          const subscription = Linking.addEventListener("url", ({ url }) => {
+            clearTimeout(timeout);
+            subscription.remove();
+            resolve(url);
+          });
+
+          void WebBrowser.openBrowserAsync(startUrl);
+        });
+
+        const parsed = Linking.parse(callbackUrl);
+        const params = parsed.queryParams ?? {};
+        const oauthError =
+          typeof params.oauth_error === "string" ? params.oauth_error : "";
+        const pendingActivation =
+          String(params.pending_activation ?? "") === "1";
+
+        if (oauthError) {
+          throw new Error(oauthError);
+        }
+        if (pendingActivation) {
+          setSubmitted(true);
+          return;
+        }
+
+        setSubmitted(true);
+      } catch (oauthError) {
+        const message =
+          oauthError instanceof Error ? oauthError.message : "Erreur OAuth";
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [clearError, setError, setLoading]);
 
   const handleGitHubSignup = useCallback(() => {
-    console.log("GitHub signup");
-  }, []);
+    void (async () => {
+      setLoading(true);
+      clearError();
+      try {
+        const startUrl = authApi.getOAuthLoginUrl("github", "register");
+        const returnUrl = AuthSession.makeRedirectUri({
+          scheme: "mobileapp",
+          path: "auth/oauth/callback",
+        });
+
+        const callbackUrl = await new Promise<string>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            subscription.remove();
+            reject(new Error("OAuth timeout: callback non recu."));
+          }, 120000);
+
+          const subscription = Linking.addEventListener("url", ({ url }) => {
+            clearTimeout(timeout);
+            subscription.remove();
+            resolve(url);
+          });
+
+          void WebBrowser.openBrowserAsync(startUrl);
+        });
+
+        const parsed = Linking.parse(callbackUrl);
+        const params = parsed.queryParams ?? {};
+        const oauthError =
+          typeof params.oauth_error === "string" ? params.oauth_error : "";
+        const pendingActivation =
+          String(params.pending_activation ?? "") === "1";
+
+        if (oauthError) {
+          throw new Error(oauthError);
+        }
+        if (pendingActivation) {
+          setSubmitted(true);
+          return;
+        }
+
+        setSubmitted(true);
+      } catch (oauthError) {
+        const message =
+          oauthError instanceof Error ? oauthError.message : "Erreur OAuth";
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [clearError, setError, setLoading]);
 
   return (
     <View
