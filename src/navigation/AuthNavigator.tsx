@@ -4,6 +4,7 @@ import { AuthStackParamList } from "./types";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { RegisterScreen } from "@/screens/RegisterScreen";
 import { ForgotPasswordScreen } from "@/screens/ForgotPasswordScreen";
+import { OAuthCallbackScreen } from "@/screens/OAuthCallbackScreen";
 import { ResetPasswordScreen } from "@/screens/ResetPasswordScreen";
 import { SelectRoleScreen } from "@/screens/SelectRoleScreen";
 
@@ -18,6 +19,7 @@ export const AuthNavigator: React.FC = () => {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="OAuthCallback" component={OAuthCallbackScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <Stack.Screen name="SelectRole" component={SelectRoleScreen} />
     </Stack.Navigator>

@@ -86,6 +86,7 @@ export default function App() {
     prefixes: ["mobileapp://"],
     config: {
       screens: {
+        OAuthCallback: "auth/oauth/callback",
         ResetPassword: "auth/reset-password",
       },
     },

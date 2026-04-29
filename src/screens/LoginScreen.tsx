@@ -129,6 +129,7 @@ export const LoginScreen = () => {
 
         const parsed = Linking.parse(callbackUrl);
         const params = parsed.queryParams ?? {};
+        const oauthError = getSingleParam(params.oauth_error);
         const needRole = getSingleParam(params.need_role) === "true";
         const accessToken = getSingleParam(params.access_token);
         const email = getSingleParam(params.email);
@@ -136,9 +137,13 @@ export const LoginScreen = () => {
         const roleCode = getSingleParam(params.role);
         const userId = getSingleParam(params.user_id);
 
+        if (oauthError) {
+          throw new Error(oauthError);
+        }
+
         if (needRole) {
           throw new Error(
-            "Compte OAuth créé sans role. Completez d'abord la selection de role sur la plateforme web."
+            "Compte OAuth cree sans role. Contactez le Super Admin pour finaliser l'activation."
           );
         }
 
