@@ -51,8 +51,8 @@ function createApiClient(): AxiosInstance {
             if (!sessionExpiredAlertShown) {
               sessionExpiredAlertShown = true;
               Alert.alert(
-                "Session expirée",
-                "Votre session a expiré. Veuillez vous reconnecter.",
+                "Compte en attente",
+                "Votre compte sera active apres l'activation du Super Admin.",
               );
             }
 

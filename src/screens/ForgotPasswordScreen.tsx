@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { TextInputField } from "@/components/ui/TextInputField";
 import { COLORS, SIZES } from "@/constants";
+import { AuthStackParamList } from "@/navigation/types";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useState } from "react";
 import {
     ScrollView,
@@ -16,7 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 
 export const ForgotPasswordScreen = () => {
-  const router = useRouter();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const insets = useSafeAreaInsets();
   const { forgotPassword, isLoading, error, clearError } = useAuth();
 
@@ -97,11 +100,11 @@ export const ForgotPasswordScreen = () => {
         </ScrollView>
 
         <View style={[styles.buttonContainer, { paddingBottom: SIZES.lg }]}>
-          <Link href="/(auth)/login" asChild>
-            <TouchableOpacity>
-              <Button label="Back to Login" onPress={() => {}} size="lg" />
-            </TouchableOpacity>
-          </Link>
+          <Button
+            label="Back to Login"
+            onPress={() => navigation.navigate("Login")}
+            size="lg"
+          />
         </View>
       </View>
     );
@@ -171,16 +174,17 @@ export const ForgotPasswordScreen = () => {
             size="lg"
           />
 
-          <Link href="/(auth)/login" asChild>
-            <TouchableOpacity style={styles.backToLoginContainer}>
-              <Ionicons
-                name="arrow-back"
-                size={SIZES.iconMd}
-                color={COLORS.primary}
-              />
-              <Text style={styles.backToLoginLink}>Back to Login</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity
+            style={styles.backToLoginContainer}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={SIZES.iconMd}
+              color={COLORS.primary}
+            />
+            <Text style={styles.backToLoginLink}>Back to Login</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Additional Help */}

@@ -4,9 +4,11 @@ import { SocialButton } from "@/components/ui/SocialButton";
 import { TextInputField } from "@/components/ui/TextInputField";
 import { COLORS, SIZES } from "@/constants";
 import { USER_ROLES } from "@/constants/roles";
+import { AuthStackParamList } from "@/navigation/types";
 import { UserRole } from "@/types/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useState } from "react";
 import {
     ScrollView,
@@ -19,7 +21,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 
 export const RegisterScreen = () => {
-  const router = useRouter();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const insets = useSafeAreaInsets();
   const { register, isLoading, error, clearError } = useAuth();
 
@@ -29,6 +32,7 @@ export const RegisterScreen = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitted, setSubmitted] = useState(false);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -76,7 +80,7 @@ export const RegisterScreen = () => {
     try {
       clearError();
       await register(fullName, email, phoneNumber, selectedRole, password);
-      router.replace("/");
+      setSubmitted(true);
     } catch (err) {
       console.error("Register error:", err);
     }
@@ -89,7 +93,6 @@ export const RegisterScreen = () => {
     validateForm,
     register,
     clearError,
-    router,
   ]);
 
   const handleGoogleSignup = useCallback(() => {
@@ -116,11 +119,13 @@ export const RegisterScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Ionicons
-            name="checkmark-done-circle-outline"
-            size={SIZES.iconXl}
-            color={COLORS.primary}
-          />
+          <View style={styles.headerIconWrap}>
+            <Ionicons
+              name="checkmark-done-circle-outline"
+              size={SIZES.iconXl}
+              color={COLORS.primary}
+            />
+          </View>
           <Text style={styles.title}>Create your account</Text>
           <Text style={styles.subtitle}>
             Start managing your Agile projects today.
@@ -142,7 +147,27 @@ export const RegisterScreen = () => {
         )}
 
         {/* Form */}
-        <View style={styles.form}>
+        <Card style={styles.formCard}>
+          {submitted ? (
+            <View style={styles.successState}>
+              <Ionicons
+                name="checkmark-circle"
+                size={SIZES.iconXl}
+                color={COLORS.success}
+              />
+              <Text style={styles.successTitle}>Compte cree avec succes</Text>
+              <Text style={styles.successText}>
+                Vous pouvez vous connecter a votre compte apres l'activation du
+                Super Admin.
+              </Text>
+              <Button
+                label="Aller au login"
+                onPress={() => navigation.navigate("Login")}
+                size="lg"
+              />
+            </View>
+          ) : (
+          <View style={styles.form}>
           <TextInputField
             label="Full Name"
             placeholder="Jane Doe"
@@ -175,8 +200,11 @@ export const RegisterScreen = () => {
           {/* Role Selection */}
           <View style={styles.roleSection}>
             <Text style={styles.roleLabel}>Your Role</Text>
+            <Text style={styles.roleHint}>
+              Select the role that matches your responsibilities.
+            </Text>
             <View style={styles.roleGrid}>
-              {USER_ROLES.map((role) => (
+              {USER_ROLES.filter((role) => role.label !== "Super Admin").map((role) => (
                 <TouchableOpacity
                   key={role.label}
                   style={[
@@ -184,10 +212,11 @@ export const RegisterScreen = () => {
                     selectedRole === role.label && styles.roleButtonSelected,
                   ]}
                   onPress={() => setSelectedRole(role.label as UserRole)}
+                  activeOpacity={0.85}
                 >
                   <Ionicons
                     name={role.icon as any}
-                    size={SIZES.iconLg}
+                    size={SIZES.iconMd}
                     color={
                       selectedRole === role.label
                         ? COLORS.primary
@@ -256,29 +285,33 @@ export const RegisterScreen = () => {
             <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
             <Text style={styles.termsLink}>Privacy Policy</Text>.
           </Text>
-        </View>
+          </View>
+          )}
+        </Card>
 
-        {/* Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
-          <View style={styles.divider} />
-        </View>
+        {!submitted && (
+          <>
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
+              <View style={styles.divider} />
+            </View>
 
-        {/* Social Buttons */}
-        <View style={styles.socialContainer}>
-          <SocialButton provider="google" onPress={handleGoogleSignup} />
-          <SocialButton provider="github" onPress={handleGitHubSignup} />
-        </View>
+            {/* Social Buttons */}
+            <View style={styles.socialContainer}>
+              <SocialButton provider="google" onPress={handleGoogleSignup} />
+              <SocialButton provider="github" onPress={handleGitHubSignup} />
+            </View>
+          </>
+        )}
 
         {/* Sign In Link */}
         <View style={styles.signinContainer}>
           <Text style={styles.signinText}>Already have an account?</Text>
-          <Link href="/(auth)/login" asChild>
-            <TouchableOpacity>
-              <Text style={styles.signinLink}> Sign in</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+            <Text style={styles.signinLink}> Sign in</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -293,17 +326,25 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: SIZES.lg,
-    paddingVertical: SIZES.lg,
+    paddingVertical: SIZES.xl,
   },
   header: {
     alignItems: "center",
     marginBottom: SIZES.xl,
   },
+  headerIconWrap: {
+    width: SIZES.iconXl * 2.1,
+    height: SIZES.iconXl * 2.1,
+    borderRadius: SIZES.iconXl * 1.05,
+    backgroundColor: COLORS.backgroundSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   title: {
     fontSize: SIZES.font2xl,
     fontWeight: "700",
     color: COLORS.text,
-    marginTop: SIZES.lg,
+    marginTop: SIZES.md,
     letterSpacing: 0.5,
   },
   subtitle: {
@@ -328,18 +369,29 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: "500",
   },
-  form: {
+  formCard: {
     marginBottom: SIZES.xl,
+    borderColor: COLORS.inputBorder,
+    backgroundColor: COLORS.background,
+  },
+  form: {
+    gap: SIZES.sm,
   },
   roleSection: {
-    marginBottom: SIZES.lg,
+    marginTop: SIZES.sm,
+    marginBottom: SIZES.md,
   },
   roleLabel: {
     color: COLORS.text,
     fontSize: SIZES.fontSm,
     fontWeight: "600",
-    marginBottom: SIZES.md,
+    marginBottom: SIZES.xs,
     letterSpacing: 0.3,
+  },
+  roleHint: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.fontXs,
+    marginBottom: SIZES.md,
   },
   roleGrid: {
     flexDirection: "row",
@@ -348,9 +400,8 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.md,
   },
   roleButton: {
-    flex: 1,
-    minWidth: "23%",
-    aspectRatio: 1,
+    width: "31%",
+    minHeight: 74,
     backgroundColor: COLORS.inputBackground,
     borderRadius: SIZES.radiusLg,
     borderWidth: 1,
@@ -366,7 +417,7 @@ const styles = StyleSheet.create({
   roleButtonText: {
     color: COLORS.textSecondary,
     fontSize: SIZES.fontXs,
-    fontWeight: "500",
+    fontWeight: "600",
     marginTop: SIZES.xs,
     textAlign: "center",
   },
@@ -375,7 +426,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   registerButton: {
-    marginTop: SIZES.md,
+    marginTop: SIZES.sm,
   },
   termsText: {
     color: COLORS.textSecondary,
@@ -425,5 +476,22 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: SIZES.fontBase,
     fontWeight: "600",
+  },
+  successState: {
+    gap: SIZES.md,
+    alignItems: "center",
+    paddingVertical: SIZES.md,
+  },
+  successTitle: {
+    fontSize: SIZES.fontLg,
+    fontWeight: "700",
+    color: COLORS.text,
+    textAlign: "center",
+  },
+  successText: {
+    fontSize: SIZES.fontBase,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: SIZES.fontBase * SIZES.lineHeightNormal,
   },
 });

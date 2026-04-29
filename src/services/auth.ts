@@ -29,6 +29,12 @@ interface PILTMeResponse {
   created_at?: string;
 }
 
+interface PILTRegisterResponse {
+  message: string;
+  user_id: number;
+  role_id: number;
+}
+
 class AuthApi {
   private axiosInstance: AxiosInstance;
 
@@ -164,7 +170,7 @@ class AuthApi {
     }
   }
 
-  async register(credentials: RegisterCredentials): Promise<AuthResponse> {
+  async register(credentials: RegisterCredentials): Promise<PILTRegisterResponse> {
     try {
       // Transform app format to PILT format
       const piltRequest: PILTRegisterRequest = {
@@ -175,14 +181,11 @@ class AuthApi {
         role_id: this.getRoleId(credentials.role),
       };
 
-      const response = await this.axiosInstance.post<PILTAuthResponse>(
+      const response = await this.axiosInstance.post<PILTRegisterResponse>(
         "/auth/register",
         piltRequest,
       );
-
-      const authResponse = this.transformPILTResponse(response.data);
-      this.setAuthToken(authResponse.token);
-      return authResponse;
+      return response.data;
     } catch (error) {
       throw this.handleError(error);
     }

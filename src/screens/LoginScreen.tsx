@@ -4,10 +4,18 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { SocialButton } from "@/components/ui/SocialButton";
 import { TextInputField } from "@/components/ui/TextInputField";
 import { COLORS, SIZES } from "@/constants";
+import { useAuthStore } from "@/context/authStore";
+import { AuthStackParamList } from "@/navigation/types";
+import { authApi } from "@/services/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import * as AuthSession from "expo-auth-session";
+import * as Linking from "expo-linking";
 import React, { useCallback, useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
 import {
+    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -18,9 +26,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 
 export const LoginScreen = () => {
-  const router = useRouter();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const insets = useSafeAreaInsets();
   const { login, isLoading, error, clearError } = useAuth();
+  const {
+    setUser,
+    setToken,
+    setRefreshToken,
+    setLoading,
+    setError,
+  } = useAuthStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,21 +70,121 @@ export const LoginScreen = () => {
     try {
       clearError();
       await login(email, password);
-      router.replace("/");
     } catch (err) {
       console.error("Login error:", err);
     }
-  }, [email, password, validateForm, login, clearError, router]);
+  }, [email, password, validateForm, login, clearError]);
+
+  const getSingleParam = useCallback((value: unknown): string => {
+    if (Array.isArray(value)) {
+      return String(value[0] ?? "");
+    }
+    return typeof value === "string" ? value : "";
+  }, []);
+
+  const mapRoleCodeToLabel = useCallback((roleCode: string) => {
+    switch (roleCode.toUpperCase()) {
+      case "SUPER_ADMIN":
+      case "SUPERADMIN":
+      case "SUPER_ADMINISTRATEUR":
+        return "Super Admin" as const;
+      case "TESTEUR_QA":
+        return "Testeur QA" as const;
+      case "PRODUCT_OWNER":
+        return "Product Owner" as const;
+      case "SCRUM_MASTER":
+        return "Scrum Master" as const;
+      case "DEVELOPPEUR":
+      default:
+        return "Développeur" as const;
+    }
+  }, []);
+
+  const handleOAuthLogin = useCallback(
+    async (provider: "google" | "github") => {
+      setLoading(true);
+      clearError();
+
+      try {
+        const startUrl = authApi.getOAuthLoginUrl(provider, "login");
+        const returnUrl = AuthSession.makeRedirectUri({
+          scheme: "mobileapp",
+          path: "auth/oauth/callback",
+        });
+
+        const callbackUrl = await new Promise<string>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            subscription.remove();
+            reject(new Error("OAuth timeout: callback non recu."));
+          }, 120000);
+
+          const subscription = Linking.addEventListener("url", ({ url }) => {
+            clearTimeout(timeout);
+            subscription.remove();
+            resolve(url);
+          });
+
+          void WebBrowser.openBrowserAsync(startUrl);
+        });
+
+        const parsed = Linking.parse(callbackUrl);
+        const params = parsed.queryParams ?? {};
+        const needRole = getSingleParam(params.need_role) === "true";
+        const accessToken = getSingleParam(params.access_token);
+        const email = getSingleParam(params.email);
+        const fullName = getSingleParam(params.nom) || email.split("@")[0];
+        const roleCode = getSingleParam(params.role);
+        const userId = getSingleParam(params.user_id);
+
+        if (needRole) {
+          throw new Error(
+            "Compte OAuth créé sans role. Completez d'abord la selection de role sur la plateforme web."
+          );
+        }
+
+        if (!accessToken || !email || !userId) {
+          throw new Error("OAuth callback invalide (token ou utilisateur manquant).");
+        }
+
+        authApi.setAuthToken(accessToken);
+        setUser({
+          id: userId,
+          email,
+          fullName,
+          phoneNumber: "",
+          role: mapRoleCodeToLabel(roleCode),
+          createdAt: new Date().toISOString(),
+        });
+        setToken(accessToken);
+        setRefreshToken("");
+        setError(null);
+        setLoading(false);
+      } catch (oauthError) {
+        const message =
+          oauthError instanceof Error ? oauthError.message : "Erreur OAuth";
+        setError(message);
+        setLoading(false);
+      }
+    },
+    [
+      clearError,
+      getSingleParam,
+      mapRoleCodeToLabel,
+      setError,
+      setLoading,
+      setRefreshToken,
+      setToken,
+      setUser,
+    ],
+  );
 
   const handleGoogleLogin = useCallback(() => {
-    console.log("Google login");
-    // Implement Google OAuth
-  }, []);
+    void handleOAuthLogin("google");
+  }, [handleOAuthLogin]);
 
   const handleGitHubLogin = useCallback(() => {
-    console.log("GitHub login");
-    // Implement GitHub OAuth
-  }, []);
+    void handleOAuthLogin("github");
+  }, [handleOAuthLogin]);
 
   return (
     <View
@@ -87,12 +203,16 @@ export const LoginScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Ionicons name="flash" size={SIZES.iconLg} color={COLORS.primary} />
-            <Text style={styles.logoText}>AgileFlow</Text>
+            <Image
+              source={require("../../assets/images/flowpilot-logo.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.logoText}>FlowPilot</Text>
           </View>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>
-            Connectez-vous à votre compte Agile
+            Connectez-vous a votre compte FlowPilot
           </Text>
         </View>
 
@@ -139,11 +259,11 @@ export const LoginScreen = () => {
               onPress={() => setRememberMe(!rememberMe)}
               label="Remember me"
             />
-            <Link href="/(auth)/forgot-password" asChild>
-              <TouchableOpacity>
-                <Text style={styles.forgotPasswordLink}>Forgot password?</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              <Text style={styles.forgotPasswordLink}>Forgot password?</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Login Button */}
@@ -172,11 +292,9 @@ export const LoginScreen = () => {
         {/* Sign Up Link */}
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Don't have an account?</Text>
-          <Link href="/(auth)/register" asChild>
-            <TouchableOpacity>
-              <Text style={styles.signupLink}> Sign up</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+            <Text style={styles.signupLink}> Sign up</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -200,6 +318,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: SIZES.xl,
+  },
+  logoImage: {
+    width: 38,
+    height: 38,
   },
   logoText: {
     fontSize: SIZES.fontXl,

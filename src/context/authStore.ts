@@ -92,19 +92,19 @@ export const useAuthStore = create<AuthStore>()(
       register: async (fullName, email, phoneNumber, role, password) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.register({
+          await authApi.register({
             fullName,
             email,
             phoneNumber,
             role,
             password,
           });
-          authApi.setAuthToken(response.token);
+          authApi.clearAuthToken();
           set({
-            user: response.user,
-            token: response.token,
-            refreshToken: response.refreshToken,
-            isAuthenticated: true,
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
             isLoading: false,
           });
         } catch (error) {

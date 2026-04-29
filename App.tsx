@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
+  LinkingOptions,
   NavigationContainer,
 } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -81,9 +82,18 @@ export default function App() {
         },
       };
 
+  const linking: LinkingOptions<any> = {
+    prefixes: ["mobileapp://"],
+    config: {
+      screens: {
+        ResetPassword: "auth/reset-password",
+      },
+    },
+  };
+
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer theme={navigationTheme} linking={linking}>
         <AppNavigator />
       </NavigationContainer>
     </SafeAreaProvider>
