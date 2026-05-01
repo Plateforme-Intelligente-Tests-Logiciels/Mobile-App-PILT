@@ -13,12 +13,17 @@ import {
   StatCard,
   StatusBadge,
   EmptyState,
+  NotificationBell,
 } from "@/components/DashboardSharedComponents";
+import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
+import { NotificationsModal } from "@/components/NotificationsModal";
 
 export default function ScrumMasterDashboard() {
   const insets = useSafeAreaInsets();
   const [projects, setProjects] = useState<ProjetResponse[]>([]);
   const [activeSprint, setActiveSprint] = useState<SprintResponse | null>(null);
+  const { enabled, unreadCount } = useNotificationRealtime();
+  const [showNotifications, setShowNotifications] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -98,6 +103,25 @@ export default function ScrumMasterDashboard() {
         />
       }
     >
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: SIZES.lg }}>
+        <View>
+          <Text style={{ color: COLORS.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
+            Scrum Master
+          </Text>
+          <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.fontSm }}>
+            Sprint Dashboard
+          </Text>
+        </View>
+        <NotificationBell
+          enabled={enabled}
+          unreadCount={unreadCount}
+          onPress={() =>
+            enabled
+              ? setShowNotifications(true)
+              : Alert.alert("Notifications", "Notifications desactivees")
+          }
+        />
+      </View>
       <HeroCard
         eyebrow="Scrum Master"
         title="Sprint Dashboard"
@@ -151,6 +175,10 @@ export default function ScrumMasterDashboard() {
           ))
         )}
       </SectionCard>
+      <NotificationsModal
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </ScrollView>
   );
 }

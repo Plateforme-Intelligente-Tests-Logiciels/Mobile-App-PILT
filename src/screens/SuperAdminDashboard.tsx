@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, SIZES } from "@/constants";
 import { logsService } from "@/services/logs";
@@ -15,11 +15,16 @@ import {
   SectionCard,
   StatCard,
   EmptyState,
+  NotificationBell,
 } from "@/components/DashboardSharedComponents";
 import type { DashboardActivity } from "@/types/api";
+import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
+import { NotificationsModal } from "@/components/NotificationsModal";
 
 export default function SuperAdminDashboard() {
   const insets = useSafeAreaInsets();
+  const { enabled, unreadCount } = useNotificationRealtime();
+  const [showNotifications, setShowNotifications] = useState(false);
   const [stats, setStats] = useState({
     users: "—",
     roles: "—",
@@ -130,6 +135,32 @@ export default function SuperAdminDashboard() {
         />
       }
     >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: SIZES.lg,
+        }}
+      >
+        <View>
+          <Text style={{ color: COLORS.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
+            Super Admin
+          </Text>
+          <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.fontSm }}>
+            Dashboard
+          </Text>
+        </View>
+        <NotificationBell
+          enabled={enabled}
+          unreadCount={unreadCount}
+          onPress={() =>
+            enabled
+              ? setShowNotifications(true)
+              : Alert.alert("Notifications", "Notifications desactivees")
+          }
+        />
+      </View>
       <HeroCard
         eyebrow="Super Admin"
         title="Tableau de bord plateforme"
@@ -193,6 +224,10 @@ export default function SuperAdminDashboard() {
           })
         )}
       </SectionCard>
+      <NotificationsModal
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </ScrollView>
   );
 }

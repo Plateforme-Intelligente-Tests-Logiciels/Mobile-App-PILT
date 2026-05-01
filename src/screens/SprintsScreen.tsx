@@ -617,9 +617,9 @@ export default function SprintsScreen() {
                             ? `${story.points} points`
                             : "Sans estimation"}
                         </Text>
-                        {story.assignee ? (
+                        {story.assignee || story.assignee_id ? (
                           <Text style={styles.detailStoryMeta}>
-                            Assignée à {story.assignee.nom}
+                            Assignée à {story.assignee?.nom ?? `Dev #${story.assignee_id}`}
                           </Text>
                         ) : null}
                       </View>

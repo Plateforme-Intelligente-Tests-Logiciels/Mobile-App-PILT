@@ -4,13 +4,15 @@ import { COLORS, SIZES } from "@/constants";
 import { USER_ROLES } from "@/constants/roles";
 import { UserRole } from "@/types/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { AuthStackParamList } from "@/navigation/types";
 
 export const SelectRoleScreen = () => {
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const insets = useSafeAreaInsets();
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
@@ -18,7 +20,7 @@ export const SelectRoleScreen = () => {
     if (selectedRole) {
       // Store selected role in a way that's accessible to next screens
       // For now, we'll navigate to login
-      router.push("/(auth)/login");
+      navigation.navigate("Login");
     }
   };
 

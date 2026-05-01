@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,6 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, SIZES } from "@/constants";
 import { useAuthStore } from "@/context/authStore";
+import { useNotificationSettingsStore } from "@/context/notificationSettingsStore";
 import { notificationsService } from "@/services/notifications";
 import { projectsService } from "@/services/projects";
 import { sprintsService } from "@/services/sprints";
@@ -20,6 +22,7 @@ import { storiesService } from "@/services/stories";
 import { cahierTestsService } from "@/services/tests";
 import { usersService } from "@/services/users";
 import type { NotificationResponse, UserStoryResponse } from "@/types/api";
+import type { DeveloperTabParamList } from "@/navigation/types";
 import { dashboardStyles as styles } from "@/components/dashboardStyles";
 import {
   StatItem,
@@ -40,12 +43,18 @@ import {
   StatCard,
   StatusBadge,
   EmptyState,
+  NotificationBell,
 } from "@/components/DashboardSharedComponents";
+import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
+import { NotificationsModal } from "@/components/NotificationsModal";
 
 export default function DeveloperDashboard() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const navigation = useNavigation<BottomTabNavigationProp<DeveloperTabParamList>>();
   const { user } = useAuthStore();
+  const notificationsEnabled = useNotificationSettingsStore((s) => s.enabled);
+  const { unreadCount } = useNotificationRealtime();
+  const [showNotifications, setShowNotifications] = useState(false);
   const [tasks, setTasks] = useState<DeveloperTask[]>([]);
   const [projectsCount, setProjectsCount] = useState(0);
   const [activeSprintsCount, setActiveSprintsCount] = useState(0);
@@ -64,6 +73,11 @@ export default function DeveloperDashboard() {
   const [refreshing, setRefreshing] = useState(false);
 
   async function refreshNotifications() {
+    if (!notificationsEnabled) {
+      setNotifications([]);
+      setUnreadNotificationsCount(0);
+      return;
+    }
     const [notificationsData, unreadCountData] = await Promise.all([
       notificationsService.listMyNotifications(false, 8),
       notificationsService.getUnreadNotificationsCount().catch(() => ({})),
@@ -171,12 +185,11 @@ export default function DeveloperDashboard() {
         if (result.status !== "fulfilled") return;
         const value = result.value;
         value.stories
-          .filter(
-            (story) =>
-              !currentUser ||
-              !currentUser.id ||
-              story.assignee?.id === currentUser.id,
-          )
+          .filter((story) => {
+            if (!currentUser || !currentUser.id) return true;
+            const assigneeId = story.assignee_id ?? story.assignee?.id;
+            return assigneeId === currentUser.id;
+          })
           .forEach((story) => {
             nextTasks.push({
               key: `backlog-${value.projectId}-${story.id}`,
@@ -221,12 +234,11 @@ export default function DeveloperDashboard() {
           }
 
           (sprint.user_stories ?? [])
-            .filter(
-              (story) =>
-                !currentUser ||
-                !currentUser.id ||
-                story.assignee?.id === currentUser.id,
-            )
+            .filter((story) => {
+              if (!currentUser || !currentUser.id) return true;
+              const assigneeId = story.assignee_id ?? story.assignee?.id;
+              return assigneeId === currentUser.id;
+            })
             .forEach((story) => {
               nextTasks.push({
                 key: `sprint-${value.projectId}-${sprint.id}-${story.id}`,
@@ -252,11 +264,9 @@ export default function DeveloperDashboard() {
           .sort((a, b) => b.id - a.id)
           .slice(0, 3);
         for (const cas of latestCases) {
-          const history = await cahierTestsService.getCasTestHistory(
-            value.projectId,
-            value.cahierId,
-            cas.id,
-          );
+          const history = await cahierTestsService
+            .getCasTestHistory(value.projectId, value.cahierId, cas.id)
+            .catch(() => []);
           const latestHistory = history[0];
           if (!latestHistory) continue;
 
@@ -317,6 +327,18 @@ export default function DeveloperDashboard() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (!notificationsEnabled) {
+      setNotifications([]);
+      setUnreadNotificationsCount(0);
+      return;
+    }
+    const intervalId = setInterval(() => {
+      refreshNotifications().catch(() => {});
+    }, 15000);
+    return () => clearInterval(intervalId);
+  }, [notificationsEnabled]);
 
   async function handleMarkNotificationAsRead(notificationId: number) {
     try {
@@ -390,6 +412,32 @@ export default function DeveloperDashboard() {
         />
       }
     >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: SIZES.lg,
+        }}
+      >
+        <View>
+          <Text style={{ color: COLORS.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
+            Developer
+          </Text>
+          <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.fontSm }}>
+            Dashboard
+          </Text>
+        </View>
+        <NotificationBell
+          enabled={notificationsEnabled}
+          unreadCount={unreadCount}
+          onPress={() =>
+            notificationsEnabled
+              ? setShowNotifications(true)
+              : Alert.alert("Notifications", "Notifications desactivees")
+          }
+        />
+      </View>
       <HeroCard
         eyebrow="Developer"
         title="Developer Dashboard"
@@ -413,7 +461,7 @@ export default function DeveloperDashboard() {
             <Text style={styles.sectionMetaText}>{selectedProjectName}</Text>
             <Text style={styles.sectionMetaText}>{taskCountLabel}</Text>
           </View>
-          <TouchableOpacity onPress={() => router.push("/(tabs)/sprints")}>
+          <TouchableOpacity onPress={() => navigation.navigate("Sprints")}>
             <Text style={styles.sectionActionLink}>View Sprints</Text>
           </TouchableOpacity>
         </View>
@@ -535,6 +583,10 @@ export default function DeveloperDashboard() {
           </SectionCard>
         </View>
       </View>
+      <NotificationsModal
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </ScrollView>
   );
 }

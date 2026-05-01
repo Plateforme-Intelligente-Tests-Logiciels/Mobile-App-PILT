@@ -24,6 +24,12 @@ export interface UtilisateurResponse {
   created_at: string;
 }
 
+export interface AssigneeRef {
+  id: number;
+  nom?: string;
+  email?: string;
+}
+
 // ===== Projects =====
 
 export interface ProjetResponse {
@@ -84,8 +90,10 @@ export interface UserStoryResponse {
   module_id?: number;
   epic_id?: number;
   sprint_id?: number;
-  assignee?: UtilisateurResponse;
-  testeur?: UtilisateurResponse;
+  assignee?: AssigneeRef;
+  assignee_id?: number;
+  testeur?: AssigneeRef;
+  testeur_id?: number;
   projet_id?: number;
 }
 

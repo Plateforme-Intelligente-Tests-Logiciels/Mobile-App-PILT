@@ -101,7 +101,7 @@ export default function StoriesScreen() {
 
   const displayed =
     storyFilter === "mine"
-      ? stories.filter((s) => s.assignee?.id === userId)
+      ? stories.filter((s) => (s.assignee_id ?? s.assignee?.id) === userId)
       : stories;
 
   return (
@@ -288,7 +288,7 @@ export default function StoriesScreen() {
                       </Text>
                     )}
 
-                    {story.assignee && (
+                    {story.assignee || story.assignee_id ? (
                       <View style={styles.assigneeRow}>
                         <Ionicons
                           name="person-outline"
@@ -296,10 +296,10 @@ export default function StoriesScreen() {
                           color={COLORS.textSecondary}
                         />
                         <Text style={styles.assigneeText}>
-                          {story.assignee.nom}
+                          {story.assignee?.nom ?? `Dev #${story.assignee_id}`}
                         </Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
                 );
               })

@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { dashboardStyles as styles } from "./dashboardStyles";
 import type { StatItem } from "@/utils/DashboardUtils";
+import { COLORS } from "@/constants";
 
 export function StatCard({ item }: { item: StatItem }) {
   return (
@@ -66,4 +67,57 @@ export function StatusBadge({ label, color }: { label: string; color: string }) 
 
 export function EmptyState({ message }: { message: string }) {
   return <Text style={styles.emptyText}>{message}</Text>;
+}
+
+export function NotificationBell({
+  unreadCount,
+  enabled,
+  onPress,
+}: {
+  unreadCount: number;
+  enabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.backgroundSecondary,
+        borderWidth: 1,
+        borderColor: COLORS.inputBorder,
+      }}
+      activeOpacity={0.8}
+    >
+      <Ionicons
+        name={enabled ? "notifications-outline" : "notifications-off-outline"}
+        size={20}
+        color={enabled ? COLORS.text : COLORS.textSecondary}
+      />
+      {enabled && unreadCount > 0 ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 6,
+            right: 6,
+            minWidth: 16,
+            height: 16,
+            borderRadius: 8,
+            paddingHorizontal: 4,
+            backgroundColor: "#ef4444",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>
+            {unreadCount}
+          </Text>
+        </View>
+      ) : null}
+    </TouchableOpacity>
+  );
 }

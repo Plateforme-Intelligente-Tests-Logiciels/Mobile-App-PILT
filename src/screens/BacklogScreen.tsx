@@ -178,12 +178,14 @@ export default function BacklogScreen() {
                           <Text style={styles.metaText}>{story.points} pts</Text>
                         </View>
                       )}
-                      {story.assignee && (
+                      {story.assignee || story.assignee_id ? (
                         <View style={styles.metaItem}>
                           <Ionicons name="person-outline" size={12} color={COLORS.textSecondary} />
-                          <Text style={styles.metaText}>{story.assignee.nom}</Text>
+                          <Text style={styles.metaText}>
+                            {story.assignee?.nom ?? `Dev #${story.assignee_id}`}
+                          </Text>
                         </View>
-                      )}
+                      ) : null}
                     </View>
                   </View>
                 );

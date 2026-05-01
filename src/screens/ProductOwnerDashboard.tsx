@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, SIZES } from "@/constants";
 import { projectsService } from "@/services/projects";
@@ -13,10 +13,15 @@ import {
   StatCard,
   StatusBadge,
   EmptyState,
+  NotificationBell,
 } from "@/components/DashboardSharedComponents";
+import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
+import { NotificationsModal } from "@/components/NotificationsModal";
 
 export default function ProductOwnerDashboard() {
   const insets = useSafeAreaInsets();
+  const { enabled, unreadCount } = useNotificationRealtime();
+  const [showNotifications, setShowNotifications] = useState(false);
   const [projects, setProjects] = useState<ProjetResponse[]>([]);
   const [projectStats, setProjectStats] = useState<
     Record<number, { nb_modules: number; nb_sprints: number }>
@@ -117,6 +122,32 @@ export default function ProductOwnerDashboard() {
         />
       }
     >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: SIZES.lg,
+        }}
+      >
+        <View>
+          <Text style={{ color: COLORS.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
+            Product Owner
+          </Text>
+          <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.fontSm }}>
+            Dashboard
+          </Text>
+        </View>
+        <NotificationBell
+          enabled={enabled}
+          unreadCount={unreadCount}
+          onPress={() =>
+            enabled
+              ? setShowNotifications(true)
+              : Alert.alert("Notifications", "Notifications desactivees")
+          }
+        />
+      </View>
       <HeroCard
         eyebrow="Product Owner"
         title="Tableau de bord produit"
@@ -161,6 +192,10 @@ export default function ProductOwnerDashboard() {
           ))
         )}
       </SectionCard>
+      <NotificationsModal
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </ScrollView>
   );
 }

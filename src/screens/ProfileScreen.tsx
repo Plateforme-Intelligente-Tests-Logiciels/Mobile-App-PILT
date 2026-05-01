@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   DevSettings,
+  Modal,
   ScrollView,
   Switch,
   StyleSheet,
@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, SIZES } from "@/constants";
 import { useAuthStore } from "@/context/authStore";
 import { useThemeStore } from "@/context/themeStore";
+import { useNotificationSettingsStore } from "@/context/notificationSettingsStore";
 import { usersService } from "@/services/users";
 import { UtilisateurResponse } from "@/types/api";
 
@@ -61,11 +62,13 @@ function ActionItem({ item }: { item: ActionRow }) {
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { user, logout } = useAuthStore();
   const { isDarkMode, toggleMode } = useThemeStore();
+  const { enabled: notificationsEnabled, setEnabled: setNotificationsEnabled } =
+    useNotificationSettingsStore();
   const [profile, setProfile] = useState<UtilisateurResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const activeColors = isDarkMode ? DARK_COLORS : LIGHT_COLORS;
   const styles = createStyles(activeColors);
 
@@ -83,7 +86,6 @@ export default function ProfileScreen() {
         text: "Déconnexion", style: "destructive",
         onPress: () => {
           logout();
-          router.replace("/(auth)/login");
         },
       },
     ]);
@@ -114,7 +116,7 @@ export default function ProfileScreen() {
       icon: "notifications-outline",
       label: "Notifications",
       sublabel: "Paramètres de notifications",
-      onPress: () => Alert.alert("Info", "Fonctionnalité disponible prochainement"),
+      onPress: () => setShowNotificationSettings(true),
     },
     {
       icon: "information-circle-outline",
@@ -192,6 +194,38 @@ export default function ProfileScreen() {
           ))}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showNotificationSettings}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowNotificationSettings(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Notifications</Text>
+            <Text style={styles.modalSubtitle}>
+              Activez ou desactivez les notifications en temps reel.
+            </Text>
+            <View style={styles.modalRow}
+            >
+              <Text style={styles.modalLabel}>Notifications temps reel</Text>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                thumbColor={notificationsEnabled ? "#ffffff" : "#f4f3f4"}
+                trackColor={{ false: "#d1d5db", true: activeColors.primary }}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setShowNotificationSettings(false)}
+            >
+              <Text style={styles.modalCloseText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -290,5 +324,37 @@ function createStyles(activeColors: typeof LIGHT_COLORS) {
   actionContent: { flex: 1 },
   actionLabel: { color: activeColors.text, fontSize: SIZES.fontBase, fontWeight: "600" },
   actionSublabel: { color: activeColors.textSecondary, fontSize: SIZES.fontXs, marginTop: 2 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: SIZES.lg,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: activeColors.backgroundSecondary,
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.xl,
+    borderWidth: 1,
+    borderColor: activeColors.inputBorder,
+  },
+  modalTitle: { color: activeColors.text, fontSize: SIZES.fontLg, fontWeight: "700" },
+  modalSubtitle: { color: activeColors.textSecondary, fontSize: SIZES.fontSm, marginTop: 6 },
+  modalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: SIZES.lg,
+  },
+  modalLabel: { color: activeColors.text, fontSize: SIZES.fontBase, fontWeight: "600" },
+  modalCloseBtn: {
+    marginTop: SIZES.lg,
+    paddingVertical: SIZES.sm,
+    borderRadius: SIZES.radiusMd,
+    backgroundColor: activeColors.primary,
+    alignItems: "center",
+  },
+  modalCloseText: { color: "#fff", fontSize: SIZES.fontSm, fontWeight: "700" },
 });
 }
