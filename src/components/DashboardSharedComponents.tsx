@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { dashboardStyles as styles } from "./dashboardStyles";
-import { StatItem } from "./DashboardUtils";
+import type { StatItem } from "@/utils/DashboardUtils";
 
 export function StatCard({ item }: { item: StatItem }) {
   return (

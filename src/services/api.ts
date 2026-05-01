@@ -1,9 +1,10 @@
 import { useAuthStore } from "@/context/authStore";
+import { getApiBaseUrl } from "@/config/apiBaseUrl";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance } from "axios";
 import { Alert } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 let sessionExpiredAlertShown = false;
 let lastSeenToken: string | null = null;

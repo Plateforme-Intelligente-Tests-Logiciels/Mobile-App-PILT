@@ -7,10 +7,11 @@ import {
     RegisterCredentials,
     ResetPasswordRequest,
 } from "@/types/auth";
+import { API_TIMEOUT_MS, getApiBaseUrl } from "@/config/apiBaseUrl";
 import axios, { AxiosInstance } from "axios";
 
 // Configure with PILT backend URL
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 // Type for PILT API responses
 interface PILTTokenRole {
@@ -41,7 +42,7 @@ class AuthApi {
   constructor() {
     this.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: API_TIMEOUT_MS,
       headers: {
         "Content-Type": "application/json",
       },
@@ -289,9 +290,15 @@ class AuthApi {
 
   private handleError(error: any): Error {
     if (axios.isAxiosError(error)) {
+      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        return new Error(
+          `Request timeout after ${API_TIMEOUT_MS}ms. Verify backend availability and EXPO_PUBLIC_API_URL (${API_BASE_URL}).`,
+        );
+      }
+
       if (error.message === "Network Error") {
         return new Error(
-          `Network Error: backend injoom maywasalsh. Thabet EXPO_PUBLIC_API_URL (${API_BASE_URL}) w anna serveur ykoun shayyekh.`
+          `Network Error: Backend error check: EXPO_PUBLIC_API_URL (${API_BASE_URL}) and which serveur.`
         );
       }
 
