@@ -69,11 +69,11 @@ export const LoginScreen = () => {
 
     try {
       clearError();
-      await login(email, password);
+      await login(email, password, rememberMe);
     } catch (err) {
       console.error("Login error:", err);
     }
-  }, [email, password, validateForm, login, clearError]);
+  }, [email, password, rememberMe, validateForm, login, clearError]);
 
   const getSingleParam = useCallback((value: unknown): string => {
     if (Array.isArray(value)) {
@@ -213,7 +213,6 @@ export const LoginScreen = () => {
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.logoText}>FlowPilot</Text>
           </View>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>
@@ -318,6 +317,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: SIZES.xl,
+    alignItems: "center",
   },
   logoContainer: {
     flexDirection: "row",
@@ -325,8 +325,9 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.xl,
   },
   logoImage: {
-    width: 38,
-    height: 38,
+    height: 150,
+    marginBottom: SIZES.sm,
+   
   },
   logoText: {
     fontSize: SIZES.fontXl,

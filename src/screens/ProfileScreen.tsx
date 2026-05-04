@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  DevSettings,
   Modal,
   ScrollView,
   Switch,
@@ -93,10 +92,6 @@ export default function ProfileScreen() {
 
   async function handleToggleTheme() {
     toggleMode();
-    // Rebuild all static StyleSheet declarations in dev after theme switch.
-    if (typeof DevSettings.reload === "function") {
-      DevSettings.reload();
-    }
   }
 
   const displayName = profile?.nom ?? user?.fullName ?? "Utilisateur";

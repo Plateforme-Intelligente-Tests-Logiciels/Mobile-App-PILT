@@ -37,6 +37,7 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
+  rememberMe: boolean;
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
