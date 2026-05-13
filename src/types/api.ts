@@ -4,7 +4,8 @@ export interface RoleResponse {
   id: number;
   nom: string;
   code: string;
-  niveau_acces: number;
+  /** Présent sur /roles ; peut être absent sur les réponses utilisateur admin. */
+  niveau_acces?: number;
 }
 
 export interface PermissionResponse {

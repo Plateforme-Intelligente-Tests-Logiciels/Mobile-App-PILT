@@ -12,7 +12,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS, SIZES } from "@/constants";
+import { SIZES } from "@/constants";
+import { useThemePalette } from "@/hooks/useThemePalette";
 import { useAuthStore } from "@/context/authStore";
 import { useNotificationSettingsStore } from "@/context/notificationSettingsStore";
 import { notificationsService } from "@/services/notifications";
@@ -23,7 +24,7 @@ import { cahierTestsService } from "@/services/tests";
 import { usersService } from "@/services/users";
 import type { NotificationResponse, UserStoryResponse } from "@/types/api";
 import type { DeveloperTabParamList } from "@/navigation/types";
-import { dashboardStyles as styles } from "@/components/dashboardStyles";
+import { useDashboardStyles } from "@/components/dashboardStyles";
 import {
   StatItem,
   DeveloperTask,
@@ -49,6 +50,8 @@ import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
 import { NotificationsModal } from "@/components/NotificationsModal";
 
 export default function DeveloperDashboard() {
+  const styles = useDashboardStyles();
+  const c = useThemePalette();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<BottomTabNavigationProp<DeveloperTabParamList>>();
   const { user } = useAuthStore();
@@ -408,7 +411,7 @@ export default function DeveloperDashboard() {
             setRefreshing(true);
             load();
           }}
-          tintColor={COLORS.primary}
+          tintColor={c.primary}
         />
       }
     >
@@ -421,10 +424,10 @@ export default function DeveloperDashboard() {
         }}
       >
         <View>
-          <Text style={{ color: COLORS.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
+          <Text style={{ color: c.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
             Developer
           </Text>
-          <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.fontSm }}>
+          <Text style={{ color: c.textSecondary, fontSize: SIZES.fontSm }}>
             Dashboard
           </Text>
         </View>
@@ -445,7 +448,7 @@ export default function DeveloperDashboard() {
       />
       {loading ? (
         <ActivityIndicator
-          color={COLORS.primary}
+          color={c.primary}
           style={{ marginVertical: SIZES.xl }}
         />
       ) : (
@@ -511,7 +514,7 @@ export default function DeveloperDashboard() {
                           : "calendar-outline"
                       }
                       size={16}
-                      color={COLORS.primary}
+                      color={c.primary}
                     />
                   </View>
                   <View style={styles.changeContent}>
@@ -552,13 +555,13 @@ export default function DeveloperDashboard() {
                   <View
                     style={[
                       styles.notificationIconWrap,
-                      { backgroundColor: `${COLORS.primary}22` },
+                      { backgroundColor: `${c.primary}22` },
                     ]}
                   >
                     <Ionicons
                       name={getNotificationIcon(notification.type)}
                       size={16}
-                      color={COLORS.primary}
+                      color={c.primary}
                     />
                   </View>
                   <View style={styles.notificationContent}>

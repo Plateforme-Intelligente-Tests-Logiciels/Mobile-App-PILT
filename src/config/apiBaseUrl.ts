@@ -1,7 +1,11 @@
 import Constants from "expo-constants";
 
 function normalizeBaseUrl(url: string): string {
-  return url.replace(/\/+$/, "");
+  const trimmed = url.trim();
+  const withScheme = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `http://${trimmed}`;
+  return withScheme.replace(/\/+$/, "");
 }
 
 function getHostFromExpo(): string | undefined {
@@ -33,5 +37,6 @@ export function getApiBaseUrl(): string {
   return "http://127.0.0.1:8000";
 }
 
-export const API_TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_API_TIMEOUT_MS || 30000);
-
+export const API_TIMEOUT_MS = Number(
+  process.env.EXPO_PUBLIC_API_TIMEOUT_MS || 30000,
+);

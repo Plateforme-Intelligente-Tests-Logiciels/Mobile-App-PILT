@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS, SIZES } from "@/constants";
+import { SIZES } from "@/constants";
+import { useThemePalette } from "@/hooks/useThemePalette";
 import { projectsService } from "@/services/projects";
 import { storiesService } from "@/services/stories";
 import type { ProjetResponse, UserStoryResponse } from "@/types/api";
-import { dashboardStyles as styles } from "@/components/dashboardStyles";
+import { useDashboardStyles } from "@/components/dashboardStyles";
 import { StatItem, asArray } from "@/utils/DashboardUtils";
 import {
   HeroCard,
@@ -19,6 +20,8 @@ import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
 import { NotificationsModal } from "@/components/NotificationsModal";
 
 export default function ProductOwnerDashboard() {
+  const styles = useDashboardStyles();
+  const c = useThemePalette();
   const insets = useSafeAreaInsets();
   const { enabled, unreadCount } = useNotificationRealtime();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -87,7 +90,7 @@ export default function ProductOwnerDashboard() {
       label: "Projets",
       value: String(projects.length),
       icon: "folder",
-      tone: COLORS.primary,
+      tone: c.primary,
     },
     {
       label: "Projets actifs",
@@ -118,7 +121,7 @@ export default function ProductOwnerDashboard() {
             setRefreshing(true);
             load();
           }}
-          tintColor={COLORS.primary}
+          tintColor={c.primary}
         />
       }
     >
@@ -131,10 +134,10 @@ export default function ProductOwnerDashboard() {
         }}
       >
         <View>
-          <Text style={{ color: COLORS.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
+          <Text style={{ color: c.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
             Product Owner
           </Text>
-          <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.fontSm }}>
+          <Text style={{ color: c.textSecondary, fontSize: SIZES.fontSm }}>
             Dashboard
           </Text>
         </View>
@@ -155,7 +158,7 @@ export default function ProductOwnerDashboard() {
       />
       {loading ? (
         <ActivityIndicator
-          color={COLORS.primary}
+          color={c.primary}
           style={{ marginVertical: SIZES.xl }}
         />
       ) : (

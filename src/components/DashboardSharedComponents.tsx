@@ -1,11 +1,12 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { dashboardStyles as styles } from "./dashboardStyles";
+import { useDashboardStyles } from "./dashboardStyles";
 import type { StatItem } from "@/utils/DashboardUtils";
-import { COLORS } from "@/constants";
+import { useThemePalette } from "@/hooks/useThemePalette";
 
 export function StatCard({ item }: { item: StatItem }) {
+  const styles = useDashboardStyles();
   return (
     <View style={styles.statCard}>
       <View
@@ -28,6 +29,7 @@ export function HeroCard({
   title: string;
   subtitle: string;
 }) {
+  const styles = useDashboardStyles();
   return (
     <View style={styles.heroCard}>
       <Text style={styles.heroEyebrow}>{eyebrow}</Text>
@@ -44,6 +46,7 @@ export function SectionCard({
   title: string;
   children: React.ReactNode;
 }) {
+  const styles = useDashboardStyles();
   return (
     <View style={styles.sectionCard}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -53,6 +56,7 @@ export function SectionCard({
 }
 
 export function StatusBadge({ label, color }: { label: string; color: string }) {
+  const styles = useDashboardStyles();
   return (
     <View
       style={[
@@ -66,6 +70,7 @@ export function StatusBadge({ label, color }: { label: string; color: string }) 
 }
 
 export function EmptyState({ message }: { message: string }) {
+  const styles = useDashboardStyles();
   return <Text style={styles.emptyText}>{message}</Text>;
 }
 
@@ -78,6 +83,7 @@ export function NotificationBell({
   enabled: boolean;
   onPress: () => void;
 }) {
+  const c = useThemePalette();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -87,16 +93,16 @@ export function NotificationBell({
         borderRadius: 22,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: COLORS.backgroundSecondary,
+        backgroundColor: c.backgroundSecondary,
         borderWidth: 1,
-        borderColor: COLORS.inputBorder,
+        borderColor: c.inputBorder,
       }}
       activeOpacity={0.8}
     >
       <Ionicons
         name={enabled ? "notifications-outline" : "notifications-off-outline"}
         size={20}
-        color={enabled ? COLORS.text : COLORS.textSecondary}
+        color={enabled ? c.text : c.textSecondary}
       />
       {enabled && unreadCount > 0 ? (
         <View

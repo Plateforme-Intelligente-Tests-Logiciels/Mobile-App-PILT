@@ -1,27 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS, SIZES } from "@/constants";
+import {
+    EmptyState,
+    HeroCard,
+    NotificationBell,
+    SectionCard,
+    StatCard,
+} from "@/components/DashboardSharedComponents";
+import { NotificationsModal } from "@/components/NotificationsModal";
+import { useDashboardStyles } from "@/components/dashboardStyles";
+import { SIZES } from "@/constants";
+import { useThemePalette } from "@/hooks/useThemePalette";
+import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
 import { logsService } from "@/services/logs";
 import { rolesService, usersService } from "@/services/users";
-import { dashboardStyles as styles } from "@/components/dashboardStyles";
-import {
-  StatItem,
-  asArray,
-  normalizeDashboardActivity,
-} from "@/utils/DashboardUtils";
-import {
-  HeroCard,
-  SectionCard,
-  StatCard,
-  EmptyState,
-  NotificationBell,
-} from "@/components/DashboardSharedComponents";
 import type { DashboardActivity } from "@/types/api";
-import { useNotificationRealtime } from "@/hooks/use-notification-realtime";
-import { NotificationsModal } from "@/components/NotificationsModal";
+import {
+    StatItem,
+    asArray,
+    normalizeDashboardActivity,
+} from "@/utils/DashboardUtils";
+import React, { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    RefreshControl,
+    ScrollView,
+    Text,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SuperAdminDashboard() {
+  const styles = useDashboardStyles();
+  const c = useThemePalette();
   const insets = useSafeAreaInsets();
   const { enabled, unreadCount } = useNotificationRealtime();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -94,7 +104,7 @@ export default function SuperAdminDashboard() {
       label: "Utilisateurs",
       value: stats.users,
       icon: "people",
-      tone: COLORS.primary,
+      tone: c.primary,
     },
     {
       label: "Rôles",
@@ -131,7 +141,7 @@ export default function SuperAdminDashboard() {
             setRefreshing(true);
             load();
           }}
-          tintColor={COLORS.primary}
+          tintColor={c.primary}
         />
       }
     >
@@ -144,10 +154,16 @@ export default function SuperAdminDashboard() {
         }}
       >
         <View>
-          <Text style={{ color: COLORS.text, fontSize: SIZES.fontXl, fontWeight: "800" }}>
+          <Text
+            style={{
+              color: c.text,
+              fontSize: SIZES.fontXl,
+              fontWeight: "800",
+            }}
+          >
             Super Admin
           </Text>
-          <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.fontSm }}>
+          <Text style={{ color: c.textSecondary, fontSize: SIZES.fontSm }}>
             Dashboard
           </Text>
         </View>
@@ -164,11 +180,11 @@ export default function SuperAdminDashboard() {
       <HeroCard
         eyebrow="Super Admin"
         title="Tableau de bord plateforme"
-        subtitle="Vue globale des utilisateurs, rôles, activité et état de la plateforme PILT."
+        subtitle="Vue globale des utilisateurs, rôles, activité et état de la plateforme FlowPilot."
       />
       {loading ? (
         <ActivityIndicator
-          color={COLORS.primary}
+          color={c.primary}
           style={{ marginVertical: SIZES.xl }}
         />
       ) : (
